@@ -1,79 +1,82 @@
 #include <kilolib.h>
 
+// declare motion variable type
 typedef enum {
-    RUNNER,
-    STATIONARY
-} role_t;
+    STOP,
+    FORWARD,
+    LEFT,
+    RIGHT
+} motion_t;
 
-role_t current_role;
-uint8_t num_robots = 4;
-uint8_t current_runner = 0;
-uint8_t runner_rx;
+motion_t cur_motion = STOP;
+uint8_t rx_kilo_id;
+message_t msg;
+uint8_t dist;
+distance_measurement_t dist_val;
+uint8_t middle_id = 1;
+uint8_t desired_side_dist = 100; 
+uint8_t last_dist1 = 0;
+uint8_t last_dist2 = 0;
+uint8_t tol = 5;
+
+new_message = 0;
+
+void set_motion(motion_t new_motion) {
+    if (cur_motion != new_motion) {
+        cur_motion = new_motion;
+        switch(cur_motion) {
+            case STOP:
+                set_motors(0,0);
+                break;
+            case FORWARD:
+                spinup_motors();
+                set_motors(kilo_straight_left, kilo_straight_right);
+                break;
+            case LEFT:
+                spinup_motors();
+                set_motors(kilo_turn_left, 0); 
+                break;
+            case RIGHT:
+                spinup_motors();
+                set_motors(0, kilo_turn_right); 
+                break;
+        }
+    }
+}
 
 void setup() {
-    if(kilo_uid == 0)
-        current_role = RUNNER;
-    else
-        current_role = STATIONARY;
-    
-    runner_setup();
-    stationary_setup();
+    msg.type = NORMAL;
+    msg.data[0] = kilo_uid;
+    msg.crc = message_crc(&msg);
 }
 
 void loop() {
-    if(current_role == RUNNER){
-        runner_loop();
-    } else{
-        stationary_loop();
+    if (kilo_uid == middle_id){
+        if (rx_kilo_id == 0){
+            last_dist1 = dist;
+        } else {
+            last_dist2 = dist;
+        }
+        
+        if (abs(last_dist1 - desired_side_dist) < tol && abs(last_dist2 - desired_side_dist) < tol ){
+            set_motion(STOP);
+        }
     }
 }
 
 void message_rx(message_t *m, distance_measurement_t *d) {
-    // Every bot's message is two parts: [0] is their own kilo_id and [1] is the kilo_id of what they think is the current runner
-    // Only the current runner can change who the current runner is. Everyone else just rebroadcasts what the current runner is
-    runner_rx = m->data[1];
-
-    // If runner in message just received is not what the given bot thinks it is, then the current runner initialized a switch of runner
-    // Update current runner, then initialize role switch on given bot. This includes running the respective setup.
-    if (runner_rx != current_runner){
-        current_runner = runner_rx;
-        if (kilo_uid == current_runner){
-            current_role = RUNNER;
-            runner_setup();
-            set_color(RGB(0,1,0));
-            delay(20);
-            set_color(RGB(0,0,0));
-        } else {
-            stationary_setup();
-            current_role = STATIONARY;
-        }
-    }
-
-    // Continuously check and update role
-    if (kilo_uid == current_runner){
-        current_role = RUNNER;
-    } else {
-        current_role = STATIONARY;
-    }
-
-    if(current_role == RUNNER)
-        runner_message_rx(m, d);
-    else
-        stationary_message_rx(m, d);
+    rx_kilo_id = m->data[0];
+    new_message = 1;
+    dist_val = *d;
+    dist = estimate_distance(&dist);
 }
 
 message_t *message_tx(){
-    if(current_role == RUNNER)
-        return runner_message_tx();
-    else
-        return stationary_message_tx();
+    return &msg;
 }
 
 void message_tx_success(){
-    if(current_role == RUNNER)
-        runner_message_tx_success();
-    else
-        stationary_message_tx_success();
+
 }
 
 int main() {
