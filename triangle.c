@@ -8,16 +8,23 @@ typedef enum {
     RIGHT
 } motion_t;
 
+// Set one side kilobot to have ID 1, other one 3
+// Set middle kilobot to have ID 2
+// IDs in line: 1, 2, 3
+
+// Set distance between 1 and 3 to be desired_side_dist
+
 motion_t cur_motion = STOP;
 uint8_t rx_kilo_id;
 message_t msg;
 uint8_t dist;
 distance_measurement_t dist_val;
-uint8_t middle_id = 1;
-uint8_t desired_side_dist = 100; 
+uint8_t middle_id = 2;
+uint8_t desired_side_dist = 130; 
 uint8_t last_dist1 = 0;
 uint8_t last_dist2 = 0;
 uint8_t tol = 5;
+uint8_t message_sent;
 
 new_message = 0;
 
@@ -48,11 +55,21 @@ void setup() {
     msg.type = NORMAL;
     msg.data[0] = kilo_uid;
     msg.crc = message_crc(&msg);
+    if (kilo_uid == 2){
+        set_motion(FORWARD);
+    }
 }
 
 void loop() {
+    if (message_sent) {
+        message_sent = 0;
+        set_color(RGB(1,0,0));
+        delay(20);
+        set_color(RGB(0,0,0));
+    }
+
     if (kilo_uid == middle_id){
-        if (rx_kilo_id == 0){
+        if (rx_kilo_id == 1){
             last_dist1 = dist;
         } else {
             last_dist2 = dist;
@@ -76,7 +93,7 @@ message_t *message_tx(){
 }
 
 void message_tx_success(){
-
+    message_sent = 1;
 }
 
 int main() {
