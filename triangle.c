@@ -21,10 +21,10 @@ message_t msg;
 uint8_t dist;
 distance_measurement_t dist_val;
 uint8_t middle_id = 2;
-uint8_t desired_side_dist = 130; 
+uint8_t desired_side_dist = 60; 
 uint8_t last_dist1 = 0;
 uint8_t last_dist2 = 0;
-uint8_t tol = 5;
+uint8_t tol = 8;
 uint8_t message_sent;
 
 uint8_t new_message = 0;
@@ -70,12 +70,18 @@ void loop() {
     }
 
     if (kilo_uid == middle_id){
-        if (rx_kilo_id == 1){
-            last_dist1 = dist;
-        } else {
-            last_dist2 = dist;
+        // debug LED pattern
+        if (last_dist1 > desired_side_dist) {
+            set_color(RGB(0,1,0));
+            delay(50);
+            set_color(RGB(0,0,0));
         }
-        
+        if (last_dist2 > desired_side_dist) {
+            set_color(RGB(0,0,1));
+            delay(50);
+            set_color(RGB(0,0,0));
+        }
+
         if (abs(last_dist1 - desired_side_dist) < tol && abs(last_dist2 - desired_side_dist) < tol ){
             set_motion(STOP);
         }
@@ -86,7 +92,13 @@ void message_rx(message_t *m, distance_measurement_t *d) {
     rx_kilo_id = m->data[0];
     new_message = 1;
     dist_val = *d;
-    dist = estimate_distance(d);
+    dist = estimate_distance(&dist_val);
+
+    if (rx_kilo_id == 1){
+        last_dist1 = dist;
+    } else {
+        last_dist2 = dist;
+    }
 }
 
 message_t *message_tx(){
