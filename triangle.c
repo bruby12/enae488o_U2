@@ -1,4 +1,5 @@
 #include <kilolib.h>
+#include <stdlib.h>
 
 // declare motion variable type
 typedef enum {
@@ -26,7 +27,7 @@ uint8_t last_dist2 = 0;
 uint8_t tol = 5;
 uint8_t message_sent;
 
-new_message = 0;
+uint8_t new_message = 0;
 
 void set_motion(motion_t new_motion) {
     if (cur_motion != new_motion) {
@@ -85,7 +86,7 @@ void message_rx(message_t *m, distance_measurement_t *d) {
     rx_kilo_id = m->data[0];
     new_message = 1;
     dist_val = *d;
-    dist = estimate_distance(&dist);
+    dist = estimate_distance(d);
 }
 
 message_t *message_tx(){
