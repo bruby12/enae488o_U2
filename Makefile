@@ -3,7 +3,7 @@ TARGETS = enae488o_u2
 all: $(TARGETS)
 .PHONY: $(TARGETS)
 
-enae488o_u2: build/triangle.elf build/triangle.hex build/triangle.lss
+enae488o_u2: build/triangle.elf build/triangle.hex build/triangle.lss build/square.elf build/square.hex build/square.lss
 
 CC = avr-gcc -std=c99
 AVROC = avr-objcopy

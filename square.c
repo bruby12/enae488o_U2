@@ -30,6 +30,7 @@ distance_measurement_t dist;
 
 uint8_t orbit_target = 255;
 uint8_t other_mover = 255;
+uint8_t other_target = 255;
 uint8_t orbit_cw = 1;
 
 // function to set new motion
@@ -102,11 +103,13 @@ void setup() {
     if(kilo_uid == 0){
         orbit_target = 1;
         other_mover = 3;
+        other_target = 2;
         orbit_cw = 1;
     }
     else if(kilo_uid == 3){
         orbit_target = 2;
         other_mover = 0;
+        other_target = 1;
         orbit_cw = 0;
     }
     else{
@@ -140,8 +143,8 @@ void loop() {
         }
 
         // Stop moving once we get within 1 side length of the other moving robot
-        else if(msg_rx.data[0] == other_mover){
-            if(cur_distance <= DESIRED_DISTANCE){
+        else if(msg_rx.data[0] == other_target){
+            if(cur_distance <= DESIRED_DISTANCE*1.414){ // sqrt(2)*side length should be diagonal length for a square
                 set_motion(STOP);
                 done = 1;
                 set_color(RGB(0,0,1));
